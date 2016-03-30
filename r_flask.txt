@@ -1,0 +1,82 @@
+https://www.reddit.com/r/flask/comments/4ba88g/af_flask_restful_newb_help/
+
+[–]badsectors Advanced 1 point 2 days ago* 
+The problem here is that @marshal_with is expecting a single object to be passed through it, but you are returning a list of items. You'll need to modify your fields configuration slightly:
+character_fields = {
+    'id': fields.Integer,
+    # Whatever else you have...
+}
+
+character_list_fields = {
+    # Wrap list inside an object because of security reasons:
+    # http://flask.pocoo.org/docs/0.10/security/#json-security
+    'items': fields.List(fields.Nested(character_fields)),
+}
+
+@marshal_with(character_list_fields) 
+def get(self):
+    results = Character.query \
+        .with_entities(
+            Character.id,
+            Character.cdata[('character', 'demographics', 'name')]
+        ) \
+        .all()
+    return {
+        'items': results,
+    }
+All that said, you should use the marshmallow library for marshalling instead of the one from flask-resful. reqparse and fields are likely going to be deprecated and removed in the future.
+permalinksavereportgive goldreply
+[–]omfg_its_so_and_so [S] 1 point 1 day ago 
+Thanks for a well written response. I haven't incorporated marshmallow yet but here are the results from your recommendations.
+I wrapped a class around that get function: class CharacterListAPI(Resource):
+and outside of the class added the resource: api.add_resource(CharacterListAPI, '/character/api/v0.1/characters', endpoint='characters')
+and added the cdata field: character_fields = { 'id': fields.Integer, 'cdata': fields.String }
+I'm confused since you added the character_list_fields var and didn't reference it later.
+If I marshal_with(character_fields) it returns: { "cdata": null, "id": 0 }
+If I marshal_with(character_list fields) it returns: { "items": [ [ { "id": 0 }, { "id": 0 } ], [ { "id": 0 }, { "id": 0 } ] ] }
+permalinksaveparenteditdisable inbox repliesdeletereply
+[–]badsectors Advanced 1 point 1 day ago 
+I'm confused since you added the character_list_fields var and didn't reference it later.
+Yeah, sorry... That was a typo. It should be like this:
+@api.resource('/characters')
+class CharacterListAPI(Resource):
+    @marshal_with(character_list_fields)
+    def get(self):
+        characters = Character.query.all()
+        return {
+            'items': characters,
+        }
+Full working example  (i tested this time :) )
+permalinksaveparentreportgive goldreply
+[–]omfg_its_so_and_so [S] 2 points 1 day ago 
+My hero!
+Bonus question: why does it only work with Character.query.all() and not the former query?
+if i use: characters = Character.query.with_entities(Character.id, Character.cdata[('character', 'demographics', 'name')]).all()
+it again returns: { "items": [ [ { "cdata": null, "id": 0 }, { "cdata": null, "id": 0 } ], [ { "cdata": null, "id": 0 }, { "cdata": null, "id": 0 } ] ] }
+permalinksaveparenteditdisable inbox repliesdeletereply
+[–]badsectors Advanced 1 point 1 day ago 
+MRW gold . I feel like I owe you more answers for all that shinyness!
+Bonus question: why does it only work with Character.query.all() and not the former query?
+Oh that's a fun question! I ran into this a while ago too. When you use Query.all(), you get a list of ORM objects back:
+>>> User.query.limit(2).all()
+[<User(188)>, <User(86)>]
+When you use with_entities() on the query, the result becomes a scalar (basically just raw row data as a list of lists):
+>>> User.query.with_entities(User.id).limit(2).all()
+[(188,), (86,)]
+Fortunately, the result is not just a plain list. SQLAlchemy returns the rows as a list of KeyedTuple objects, which are basically namedtuples. You need to use the _asdict() method to transform them into something marshallable:
+>>> users = User.query.with_entities(User.id).limit(2).all()
+>>> [x._asdict() for x in users]
+[{'id': 188}, {'id': 86}]
+This is kindof ugly in my opinion. Fortunately, there is a better way! You should take a look through the SQLAlchemy docs on Deferred Column Loading. The TL;DR for your situation is that you want to use load_only() to tell the query to only load the columns you are interested in:
+>>> from sqlalchemy.orm import load_only
+>>> print User.query.options(load_only(User.id)).limit(2)
+SELECT "user".id AS user_id
+FROM "user"
+ LIMIT :param_1
+>>> User.query.options(load_only(User.id)).limit(2).all()
+[<User(188)>, <User(86)>]
+Keep in mind that trying to access any other properties on the objects you load this way that are not in the list of columns you passed to load_only will require a separate query to the database!
+permalinksaveparentreportgive goldreplied
+[–]omfg_its_so_and_so [S] 1 point just now 
+I love you
+permalinksaveparenteditdisable inbox repliesdeletereply

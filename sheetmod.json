@@ -1,0 +1,67 @@
+{
+	"character": {
+		"demographics": {
+			"name": "Dukane",
+			"race": "human",
+			"sex": "male"
+		},
+		"progressions": [{
+			"characterClass": "fighter",
+			"hitpoints": "10"
+		}, {
+			"characterClass": "fighter",
+			"hitpoints": "5"
+		}, {
+			"characterClass": "fighter",
+			"hitpoints": "6"
+		}],
+		"abilities": [{
+			"name": "strength",
+			"score": "15"
+		}, {
+			"name": "dexterity",
+			"score": "10"
+		}, {
+			"name": "costitution",
+			"score": "14"
+		}, {
+			"name": "intelligence",
+			"score": "13"
+		}, {
+			"name": "wisdom",
+			"score": "12"
+		}, {
+			"name": "charisma",
+			"score": "8"
+		}],
+		"skills": [{
+			"name": "Athletics",
+			"ranks": "1",
+			"ability": "strength",
+			"c": "true"
+		}, {
+			"name": "Craft",
+			"ranks": "1",
+			"ability": "wisdom",
+			"c": "true"
+		}, {
+			"name": "Ride",
+			"ranks": "1",
+			"ability": "dexterity",
+			"c": "true"
+		}, {
+			"name": "Survival",
+			"ranks": "1",
+			"ability": "wisdom",
+			"c": "false"
+		}],
+		"feats": [{
+			"name": "improved initiative",
+			"description": "you are likely to act first in combat.",
+			"mechanics": ""
+		}, {
+			"name": "power attack",
+			"description": "hit stuff really hard."
+		}]
+	}
+}

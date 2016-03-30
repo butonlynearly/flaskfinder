@@ -1,0 +1,15 @@
+alter table character rename sheet to cdata;
+
+select * from character;
+
+
+select id, cdata->'character'->'demographics'->'name' as name from character
+
+select id, cdata->>'demographics' as demo from character;
+
+select id, cdata->'sheet'->'progressions' as prog from character;
+
+delete from character where id = 1
+
+insert into character values (2,1,'{"character": {"demographics": {"name": "Samantha","race": "human","sex": "male"},"progressions": [{"characterClass": "fighter","hitpoints": "10"}]}}');
+			
